@@ -1,0 +1,255 @@
+@page "/todos"
+@using Tasks.Poc.Contracts.DTOs
+@using Tasks.Poc.Web
+@attribute [StreamRendering(true)]
+@attribute [OutputCache(Duration = 5)]
+
+@inject TodoApiClient TodoApi
+
+<PageTitle>Todo Lists</PageTitle>
+
+<h1>Todo Lists</h1>
+
+<div class="row">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5>Users</h5>
+            </div>
+            <div class="card-body">
+                @if (users == null)
+                {
+                    <p><em>Loading users...</em></p>
+                }
+                else if (!users.Any())
+                {
+                    <p><em>No users found. Create a user first.</em></p>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Name</label>
+                        <input @bind="newUserName" class="form-control" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Email</label>
+                        <input @bind="newUserEmail" type="email" class="form-control" />
+                    </div>
+                    <button @onclick="CreateUser" class="btn btn-primary" disabled="@creatingUser">
+                        @if (creatingUser) { <span>Creating...</span> } else { <span>Create User</span> }
+                    </button>
+                }
+                else
+                {
+                    @foreach (var user in users)
+                    {
+                        <div class="user-item mb-2 p-2 @(selectedUserId == user.Id ? "bg-primary bg-opacity-10" : "bg-light") rounded"
+                             style="cursor: pointer;" @onclick="() => SelectUser(user.Id)">
+                            <div class="fw-bold">@user.Name</div>
+                            <small class="text-muted">@user.Email</small>
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-8">
+        @if (selectedUserId != null)
+        {
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5>Todo Lists for @users?.FirstOrDefault(u => u.Id == selectedUserId)?.Name</h5>
+                    <button @onclick="ShowCreateTodoForm" class="btn btn-sm btn-success">+ New Todo List</button>
+                </div>
+                <div class="card-body">
+                    @if (showCreateTodoForm)
+                    {
+                        <div class="mb-3 p-3 border rounded bg-light">
+                            <h6>Create New Todo List</h6>
+                            <div class="mb-2">
+                                <input @bind="newTodoTitle" placeholder="Todo list title" class="form-control" />
+                            </div>
+                            <div class="mb-2">
+                                <textarea @bind="newTodoDescription" placeholder="Description (optional)" class="form-control" rows="2"></textarea>
+                            </div>
+                            <div>
+                                <button @onclick="CreateTodoList" class="btn btn-primary btn-sm me-2" disabled="@creatingTodo">
+                                    @if (creatingTodo) { <span>Creating...</span> } else { <span>Create</span> }
+                                </button>
+                                <button @onclick="CancelCreateTodo" class="btn btn-secondary btn-sm">Cancel</button>
+                            </div>
+                        </div>
+                    }
+
+                    @if (todoLists == null)
+                    {
+                        <p><em>Loading todo lists...</em></p>
+                    }
+                    else if (!todoLists.Any())
+                    {
+                        <p><em>No todo lists found. Create your first todo list!</em></p>
+                    }
+                    else
+                    {
+                        @foreach (var todoList in todoLists)
+                        {
+                            <div class="card mb-3">
+                                <div class="card-header d-flex justify-content-between align-items-center">
+                                    <h6 class="mb-0">@todoList.Title</h6>
+                                    <small class="text-muted">
+                                        @todoList.CompletedItems/@todoList.TotalItems completed 
+                                        (@todoList.CompletionPercentage.ToString("F0")%)
+                                    </small>
+                                </div>
+                                <div class="card-body">
+                                    @if (!string.IsNullOrEmpty(todoList.Description))
+                                    {
+                                        <p class="text-muted">@todoList.Description</p>
+                                    }
+                                    <div class="row text-center">
+                                        <div class="col">
+                                            <strong>@todoList.TotalItems</strong><br>
+                                            <small class="text-muted">Total</small>
+                                        </div>
+                                        <div class="col">
+                                            <strong class="text-success">@todoList.CompletedItems</strong><br>
+                                            <small class="text-muted">Completed</small>
+                                        </div>
+                                        <div class="col">
+                                            <strong class="text-warning">@todoList.PendingItems</strong><br>
+                                            <small class="text-muted">Pending</small>
+                                        </div>
+                                        <div class="col">
+                                            <strong class="text-danger">@todoList.OverdueItems</strong><br>
+                                            <small class="text-muted">Overdue</small>
+                                        </div>
+                                    </div>
+                                    @if (todoList.CompletionPercentage > 0)
+                                    {
+                                        <div class="progress mt-2">
+                                            <div class="progress-bar @(todoList.IsCompleted ? "bg-success" : "bg-primary")" 
+                                                 style="width: @(todoList.CompletionPercentage)%"></div>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="text-center text-muted mt-5">
+                <p>Select a user to view their todo lists</p>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    private List<UserDto>? users;
+    private List<TodoListDto>? todoLists;
+    private Guid? selectedUserId;
+    
+    private bool showCreateTodoForm = false;
+    private string newTodoTitle = "";
+    private string newTodoDescription = "";
+    private bool creatingTodo = false;
+    
+    private string newUserName = "";
+    private string newUserEmail = "";
+    private bool creatingUser = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadUsers();
+    }
+
+    private async Task LoadUsers()
+    {
+        try
+        {
+            users = await TodoApi.GetAllUsersAsync();
+        }
+        catch (Exception ex)
+        {
+            // Handle error - in production, use proper logging
+            Console.WriteLine($"Error loading users: {ex.Message}");
+        }
+    }
+
+    private async Task SelectUser(Guid userId)
+    {
+        selectedUserId = userId;
+        await LoadTodoLists();
+    }
+
+    private async Task LoadTodoLists()
+    {
+        if (selectedUserId == null) return;
+
+        try
+        {
+            todoLists = await TodoApi.GetUserTodoListsAsync(selectedUserId.Value);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading todo lists: {ex.Message}");
+        }
+    }
+
+    private void ShowCreateTodoForm()
+    {
+        showCreateTodoForm = true;
+        newTodoTitle = "";
+        newTodoDescription = "";
+    }
+
+    private void CancelCreateTodo()
+    {
+        showCreateTodoForm = false;
+    }
+
+    private async Task CreateTodoList()
+    {
+        if (string.IsNullOrWhiteSpace(newTodoTitle) || selectedUserId == null) return;
+
+        creatingTodo = true;
+        try
+        {
+            await TodoApi.CreateTodoListAsync(selectedUserId.Value, newTodoTitle, newTodoDescription);
+            showCreateTodoForm = false;
+            await LoadTodoLists(); // Reload the lists
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error creating todo list: {ex.Message}");
+        }
+        finally
+        {
+            creatingTodo = false;
+        }
+    }
+
+    private async Task CreateUser()
+    {
+        if (string.IsNullOrWhiteSpace(newUserName) || string.IsNullOrWhiteSpace(newUserEmail)) return;
+
+        creatingUser = true;
+        try
+        {
+            await TodoApi.CreateUserAsync(newUserName, newUserEmail);
+            await LoadUsers(); // Reload users
+            newUserName = "";
+            newUserEmail = "";
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error creating user: {ex.Message}");
+        }
+        finally
+        {
+            creatingUser = false;
+        }
+    }
+}

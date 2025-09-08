@@ -1,0 +1,5 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\aspire\Tasks.Poc.ServiceDefaults\Tasks.Poc.ServiceDefaults.csproj" />
+  </ItemGroup>
+</Project>

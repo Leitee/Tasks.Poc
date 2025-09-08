@@ -1,0 +1,3 @@
+[submodule "src/fundations/Tasks.Poc.Contracts"]
+	path = src/fundations/Tasks.Poc.Contracts
+	url = https://github.com/Leitee/Tasks.Poc.Contracts.git

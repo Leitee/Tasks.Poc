@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(/R:\\_playground\\twarz-poc/**)",
+      "Write(/R:\\_playground\\twarz-poc/**)",
+      "Bash(dotnet *)",
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

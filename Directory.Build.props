@@ -1,0 +1,30 @@
+<Project>
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <WarningsAsErrors />
+    <LangVersion>12</LangVersion>
+    <!-- Allow specific warnings that are common in Clean Architecture -->
+    <WarningsNotAsErrors>CS8618;CS1998;CA1063</WarningsNotAsErrors>
+    <!-- Disable overly strict or conflicting StyleCop rules -->
+    <NoWarn>$(NoWarn);SA1633;SA1101;SA1413;SA0001;SA1518;SA1028;SA1600;SA1005;SA1009;SA1010;SA1111;SA1127;SA1202;SA1200;IDE0065;SA1602;SA1516;SA1503;SA1512;SA1515;SA1201;SA1309;SA1502;SA1128;SA1402;SA1601;SA1507;SA1401;SA1210;SA1116;SA1108;SA1117;IDE0161;CA1063;SA1649</NoWarn>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <AnalysisLevel>latest</AnalysisLevel>
+    <!-- Generate XML documentation file -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <!-- Disable XML documentation warnings -->
+    <NoWarn>$(NoWarn);1591</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="StyleCop.Analyzers">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+</Project>
