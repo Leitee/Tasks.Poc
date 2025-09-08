@@ -1,182 +1,168 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides technical architecture guidance to Claude Code (claude.ai/code) when working with this codebase.
 
-## Architecture Overview
+## Solution Architecture
 
-This is a .NET 9.0 solution using .NET Aspire for cloud-native application development. The solution follows Clean Architecture principles with Domain-Driven Design patterns:
+**.NET 9.0 solution** using **.NET Aspire** with **Clean Architecture** + **Domain-Driven Design** patterns.
 
-### Core Projects
-- **Tasks.Poc.Domain** - Core domain entities, value objects, and business rules
-- **Tasks.Poc.Application** - Application services, CQRS handlers, and interfaces using MediatR
+### Project Structure
 
-### Infrastructure Projects  
-- **Tasks.Poc.Infrastructure** - Data persistence with Entity Framework Core, PostgreSQL, and repository implementations
-
-### Foundation Projects
-- **Tasks.Poc.Contracts** - Shared contracts and DTOs across layers
-- **Tasks.Poc.Constants** - Application-wide constants and configuration values
-- **Tasks.Poc.SharedKernel** - Common domain primitives and shared abstractions
-
-### Presentation Projects
-- **Tasks.Poc.AppHost** - Aspire application host orchestrating services and PostgreSQL
-- **Tasks.Poc.ApiCore** - ASP.NET Core Web API with RESTful endpoints for todo management
-- **Tasks.Poc.Web** - Blazor Server application serving as the web frontend
-- **Tasks.Poc.ServiceDefaults** - Shared service configuration and extensions
-- **Tasks.Poc.E2eTests** - End-to-end tests using Aspire.Hosting.Testing
-- **Tasks.Poc.ArchTests** - Architecture tests to enforce coding standards and design principles
-
-### Domain Model
-The application manages a todo list system with:
-- **Users** with email addresses and names
-- **TodoLists** owned by users with titles and descriptions
-- **TodoItems** within lists with priorities, due dates, and completion status
-- **Value Objects** with implicit operators for seamless conversions (EntityId, UserName, Email, TodoTitle, etc.)
-- **Domain Events** for business logic notifications
-
-## Common Commands
-
-### Build and Run
-```bash
-# Build the entire solution
-dotnet build Tasks.Poc.sln
-
-# Run the application host (starts PostgreSQL + API + Web services)
-dotnet run --project src/aspire/Tasks.Poc.AppHost
-
-# Build specific project
-dotnet build src/services/apicore/Tasks.Poc.ApiCore
-dotnet build src/clients/web/Tasks.Poc.Web
+```
+src/
+├── aspire/
+│   ├── Tasks.Poc.AppHost/              # Aspire orchestration host
+│   └── Tasks.Poc.ServiceDefaults/      # Shared OTEL + resilience config
+├── services/apicore/
+│   ├── Tasks.Poc.ApiCore/              # Web API + logging architecture
+│   ├── Tasks.Poc.Application/          # CQRS handlers + MediatR behaviors
+│   ├── Tasks.Poc.Domain/               # Entities + value objects + events
+│   └── Tasks.Poc.Infrastructure/       # EF Core + PostgreSQL + migrations
+├── clients/web/
+│   └── Tasks.Poc.Web/                  # Blazor Server frontend
+├── fundations/
+│   ├── Tasks.Poc.Contracts/            # Shared DTOs
+│   ├── Tasks.Poc.Constants/            # Application constants
+│   └── Tasks.Poc.SharedKernel/         # Common abstractions
+└── tests/
+    ├── Tasks.Poc.E2eTests/             # Aspire.Hosting.Testing
+    └── Tasks.Poc.ArchTests/            # Architecture enforcement
 ```
 
-### Database Management
+### Key Technical Patterns
+
+- **Clean Architecture layers**: Domain → Application → Infrastructure → Presentation
+- **CQRS with MediatR**: Command/query separation with pipeline behaviors
+- **Value Objects**: Implicit operators for `EntityId`, `UserName`, `Email`, etc.
+- **Domain Events**: Business logic notifications
+- **Two-Phase Logging**: Bootstrap + Runtime with Serilog + OpenTelemetry
+
+## Database Architecture
+
+### Technology Stack
+- **PostgreSQL** via Aspire hosting with persistent volumes
+- **Entity Framework Core 9.0** Code-First with migrations
+- **Custom migration history**: `system.TwarzPocMigrationsHistory` table
+
+### Schema
+- **Users**: Id(uuid), Name, Email(unique), CreatedAt, LastLoginAt
+- **TodoLists**: Id(uuid), Title, Description, OwnerId(FK), CreatedAt, UpdatedAt  
+- **TodoItems**: Id(uuid), Title, Description, IsCompleted, Priority(enum), DueDate, CompletedAt, TodoListId(FK)
+
+### Migration Commands
 ```bash
-# Create new migration (stored in Persistence/Migrations)
+# Create migration
 dotnet ef migrations add MigrationName --project src/services/apicore/Tasks.Poc.Infrastructure --startup-project src/services/apicore/Tasks.Poc.ApiCore --context TodoDbContext --output-dir Persistence/Migrations
 
-# Remove last migration
-dotnet ef migrations remove --project src/services/apicore/Tasks.Poc.Infrastructure --startup-project src/services/apicore/Tasks.Poc.ApiCore --context TodoDbContext
-
-# Generate SQL deployment scripts for production
-dotnet ef migrations script --project src/services/apicore/Tasks.Poc.Infrastructure --startup-project src/services/apicore/Tasks.Poc.ApiCore --context TodoDbContext --output src/services/apicore/Tasks.Poc.Infrastructure/Persistence/Scripts/full-database-script.sql
-
-# Generate incremental SQL script from specific migration
-dotnet ef migrations script InitialCreate --project src/services/apicore/Tasks.Poc.Infrastructure --startup-project src/services/apicore/Tasks.Poc.ApiCore --context TodoDbContext --output src/services/apicore/Tasks.Poc.Infrastructure/Persistence/Scripts/incremental-script.sql
-
-# Update database manually (development only)
+# Update database (dev only)
 dotnet ef database update --project src/services/apicore/Tasks.Poc.Infrastructure --startup-project src/services/apicore/Tasks.Poc.ApiCore --context TodoDbContext
+
+# Generate SQL scripts (production)
+dotnet ef migrations script --project src/services/apicore/Tasks.Poc.Infrastructure --startup-project src/services/apicore/Tasks.Poc.ApiCore --context TodoDbContext --output src/services/apicore/Tasks.Poc.Infrastructure/Persistence/Scripts/full-database-script.sql
+```
+
+## Logging Architecture
+
+### Implementation
+- **Serilog 4.2.0** with **OpenTelemetry 1.12.0** integration
+- **Two-phase logging**: Bootstrap static logger → Runtime DI logger
+- **Request correlation** via `X-Correlation-ID` header propagation
+- **Performance monitoring**: >1s warnings, >5s alerts
+- **Security**: Auto-redaction of sensitive headers (`authorization`, `cookie`, `x-api-key`)
+
+### Key Components
+- `src/services/apicore/Tasks.Poc.ApiCore/Logging/BootstrapLogger.cs` - Early startup logging
+- `src/services/apicore/Tasks.Poc.ApiCore/Logging/LoggingExtensions.cs` - Serilog + OTEL setup
+- `src/services/apicore/Tasks.Poc.ApiCore/Logging/RequestLoggingMiddleware.cs` - HTTP correlation
+- `src/services/apicore/Tasks.Poc.ApiCore/Behaviors/LoggingBehavior.cs` - MediatR pipeline
+
+### Configuration Pattern
+- **Development**: Debug level, console + file, 7-day retention
+- **Production**: Information level, JSON structured, 30-day retention  
+- **OTLP Export**: Configurable via `OTEL_EXPORTER_OTLP_ENDPOINT`
+
+## Development Commands
+
+### Build & Run
+```bash
+# Full solution build
+dotnet build Tasks.Poc.sln
+
+# Aspire orchestration (recommended)
+dotnet run --project src/aspire/Tasks.Poc.AppHost
+
+# Individual services
+dotnet watch --project src/services/apicore/Tasks.Poc.ApiCore
+dotnet watch --project src/clients/web/Tasks.Poc.Web
 ```
 
 ### Testing
 ```bash
-# Run all tests
+# All tests
 dotnet test
 
-# Run tests for specific project
+# Specific test projects  
 dotnet test src/tests/Tasks.Poc.E2eTests
 dotnet test src/tests/Tasks.Poc.ArchTests
-
-# Run tests with detailed output
-dotnet test --verbosity normal
 ```
+
+## API Endpoints Pattern
+
+RESTful endpoints following Clean Architecture:
+- **Users**: `/api/users` (GET, POST), `/api/users/{id}` (GET)
+- **TodoLists**: `/api/users/{userId}/todos` (GET, POST), `/api/todos/{todoListId}` (GET)
+- **TodoItems**: `/api/todos/{todoListId}/items` (POST), `/api/todos/{todoListId}/items/{itemId}/complete` (PUT)
+
+## Code Style Requirements
+
+- **File-scoped namespaces** required
+- **Usings inside namespace** declarations
+- **Nullable reference types** enabled
+- **StyleCop.Analyzers** enforcement
+- **MediatR pipeline behaviors** for cross-cutting concerns
+
+## Environment-Specific Behavior
 
 ### Development
-```bash
-# Watch mode for API service
-dotnet watch --project src/services/apicore/Tasks.Poc.ApiCore
+- **Auto-seeding**: Bogus library generates 10-15 users with realistic todo data
+- **Rich logging**: Colored console output with detailed EF query logging
+- **Auto-migration**: Database created/updated automatically
 
-# Watch mode for web frontend
-dotnet watch --project src/clients/web/Tasks.Poc.Web
+### Production
+- **Manual deployment**: SQL scripts for blue-green deployments
+- **Structured logging**: JSON format for log aggregation
+- **No seeding**: Clean production databases
+- **Health checks**: `/health` endpoints for orchestration
+
+## Important File Locations
+
+### Configuration
+- `src/services/apicore/Tasks.Poc.Infrastructure/Persistence/Migrations/` - EF migrations
+- `src/services/apicore/Tasks.Poc.Infrastructure/Persistence/Scripts/` - SQL deployment scripts  
+- `src/services/apicore/Tasks.Poc.Infrastructure/Persistence/Seeders/` - Development data seeding
+- `src/services/apicore/Tasks.Poc.Infrastructure/Persistence/Configurations/` - EF entity configs
+
+### Service Configuration
+- `src/aspire/Tasks.Poc.AppHost/AppHost.cs` - Service orchestration + PostgreSQL setup
+- `src/aspire/Tasks.Poc.ServiceDefaults/Extensions.cs` - OTEL + health checks + resilience
+- `src/services/apicore/Tasks.Poc.Infrastructure/DependencyInjection.cs` - Database provider config
+
+## Instrumentation & Observability
+
+### OpenTelemetry Features
+- **Metrics**: ASP.NET Core, HTTP client, runtime, process, EF Core
+- **Tracing**: Request correlation, database operations, exception tagging
+- **Logging**: Structured JSON with correlation context
+
+### Package Versions (Directory.Packages.props)
+```xml
+<PackageVersion Include="Serilog" Version="4.2.0" />
+<PackageVersion Include="Serilog.AspNetCore" Version="9.0.0" />
+<PackageVersion Include="Serilog.Sinks.OpenTelemetry" Version="4.1.0" />
+<PackageVersion Include="OpenTelemetry.Instrumentation.EntityFrameworkCore" Version="1.10.0-beta.1" />
+<PackageVersion Include="OpenTelemetry.Instrumentation.Process" Version="1.12.0-beta.1" />
 ```
 
-## Project Structure
+---
 
-### Service Communication
-- The Web frontend (`webfrontend`) communicates with the API service (`apiservice`) through HTTP
-- Services are configured in `src/aspire/Tasks.Poc.AppHost/AppHost.cs` with health checks and service references
-- PostgreSQL database with persistent data volume and pgWeb management UI
-- The API service exposes RESTful endpoints for user and todo management
-- Service discovery and dependency management handled automatically by Aspire
-
-### Database Architecture
-- **PostgreSQL** as the primary database with Aspire hosting
-- **Entity Framework Core** with Code-First migrations stored in `Persistence/Migrations/`
-- **Custom migrations history**: `system.TwarzPocMigrationsHistory` table in separate schema
-- **Environment-specific approach**: 
-  - **Development**: Automatic seeding with rich fake data using Bogus library
-  - **Production/Staging**: Manual migration via SQL scripts for blue-green deployments
-- **SQL deployment scripts**: Generated in `Persistence/Scripts/` for production use
-
-### Key Files
-- `src/aspire/Tasks.Poc.AppHost/AppHost.cs` - Service orchestration with PostgreSQL configuration
-- `src/services/apicore/Tasks.Poc.ApiCore/Program.cs` - API service configuration with Clean Architecture setup
-- `src/services/apicore/Tasks.Poc.Infrastructure/DependencyInjection.cs` - Database provider configuration
-- `src/services/apicore/Tasks.Poc.Infrastructure/Persistence/` - DbContext, configurations, migrations, and seeders
-  - `Migrations/` - EF Core migration files with custom directory structure
-  - `Scripts/` - SQL deployment scripts for production blue-green deployments
-  - `Seeders/` - Development-only data seeding with Bogus library
-  - `Configurations/` - Entity Framework entity configurations
-- `src/services/apicore/Tasks.Poc.Domain/` - Domain entities and value objects with implicit operators
-- `src/services/apicore/Tasks.Poc.Application/` - CQRS handlers using MediatR pattern
-- `src/fundations/Tasks.Poc.Contracts/` - Shared contracts and DTOs
-- `src/fundations/Tasks.Poc.Constants/` - Application constants and configuration values
-- `src/fundations/Tasks.Poc.SharedKernel/` - Common domain primitives and shared abstractions
-
-### API Endpoints
-The API service provides RESTful endpoints for:
-- **User Management**: `GET/POST /api/users`, `GET /api/users/{id}`
-- **Todo Lists**: `GET/POST /api/users/{userId}/todos`, `GET /api/todos/{todoListId}`  
-- **Todo Items**: `POST /api/todos/{todoListId}/items`, `PUT /api/todos/{todoListId}/items/{itemId}/complete`
-
-### Testing Strategy
-- **End-to-end tests** use `Aspire.Hosting.Testing` framework in `Tasks.Poc.E2eTests`
-- **Architecture tests** validate design principles and coding standards in `Tasks.Poc.ArchTests`
-- Tests validate end-to-end service communication
-- Health checks ensure services are ready before testing
-- Separate test database configuration using InMemory provider
-
-## Development Notes
-
-- All projects target .NET 9.0 with nullable reference types enabled
-- **Clean Architecture** with Domain-Driven Design principles
-- **CQRS pattern** using MediatR for command/query separation
-- **Value Objects** with implicit operators for seamless string/GUID conversions
-- **Aspire orchestration** for PostgreSQL, API, and Web services
-- **Environment-specific database management**:
-  - **Development**: Automatic database creation and seeding with fake data
-  - **Production**: Manual SQL script deployment for controlled blue-green deployments
-- **Custom migrations history table**: `system.TwarzPocMigrationsHistory` in separate schema
-- Health checks configured for all services at `/health` endpoints
-
-### Code style
-- alwasy use file-scoped namespaces
-- usings always go inside namespace
-
-## Database Schema
-
-### Users Table
-- Id (uuid), Name (varchar), Email (varchar), CreatedAt, LastLoginAt
-- **Indexes**: Unique index on Email, Performance index on CreatedAt
-
-### TodoLists Table  
-- Id (uuid), Title (varchar), Description (varchar), OwnerId (FK to Users), CreatedAt, UpdatedAt
-
-### TodoItems Table
-- Id (uuid), Title (varchar), Description (varchar), IsCompleted, Priority (enum), CreatedAt, CompletedAt, DueDate, TodoListId (FK to TodoLists)
-
-### System Schema
-- **TwarzPocMigrationsHistory** (system schema): Custom migrations history table for tracking database version
-
-## Deployment Strategy
-
-### Development Environment
-- Automatic database creation via `EnsureCreatedAsync()`
-- Rich fake data seeding using Bogus library (10-15 users, realistic todo lists and items)
-- Runs `DevelopmentSeedingService` on application startup
-
-### Production/Staging Environment  
-- **Blue-Green Deployment Ready**: Use SQL scripts from `Persistence/Scripts/`
-- **Full Deployment**: Execute `full-database-script.sql` for new environments
-- **Incremental Updates**: Use migration-specific scripts for existing databases
-- **No Automatic Seeding**: Production databases remain clean
-- **Custom History Tracking**: Migrations tracked in `system.TwarzPocMigrationsHistory`
+*This file contains only technical architecture details needed by AI agents. For business context, user documentation, and deployment guides, see README.md.*

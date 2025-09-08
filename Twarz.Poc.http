@@ -1,6 +1,273 @@
 @ApiCore_HostAddress = http://localhost:5583
 
-GET {{ApiCore_HostAddress}}/weatherforecast/
+### Variables for testing (these will be set by responses)
+@userId = 
+@todoListId = 
+@todoItemId = 
+
+###
+# Health Check
+GET {{ApiCore_HostAddress}}/health
 Accept: application/json
 
 ###
+# ===================
+# USER ENDPOINTS
+# ===================
+
+### Create a new user
+POST {{ApiCore_HostAddress}}/api/users
+Content-Type: application/json
+
+{
+  "name": "John Doe",
+  "email": "john.doe@example.com"
+}
+
+### Create another user for testing
+POST {{ApiCore_HostAddress}}/api/users
+Content-Type: application/json
+
+{
+  "name": "Jane Smith", 
+  "email": "jane.smith@example.com"
+}
+
+### Get all users
+GET {{ApiCore_HostAddress}}/api/users
+Accept: application/json
+
+### Get user by ID (replace with actual GUID from create response)
+GET {{ApiCore_HostAddress}}/api/users/00000000-0000-0000-0000-000000000000
+Accept: application/json
+
+###
+# ===================
+# TODO LIST ENDPOINTS  
+# ===================
+
+### Create todo list for user (replace userId with actual GUID)
+POST {{ApiCore_HostAddress}}/api/users/00000000-0000-0000-0000-000000000000/todos
+Content-Type: application/json
+
+{
+  "title": "Work Tasks",
+  "description": "Important work-related tasks to complete this week"
+}
+
+### Create another todo list
+POST {{ApiCore_HostAddress}}/api/users/00000000-0000-0000-0000-000000000000/todos
+Content-Type: application/json
+
+{
+  "title": "Personal Tasks",
+  "description": "Personal errands and activities"
+}
+
+### Get all todo lists for a user
+GET {{ApiCore_HostAddress}}/api/users/00000000-0000-0000-0000-000000000000/todos
+Accept: application/json
+
+### Get specific todo list with items (replace with actual todoListId)
+GET {{ApiCore_HostAddress}}/api/todos/00000000-0000-0000-0000-000000000000
+Accept: application/json
+
+###
+# ===================
+# TODO ITEM ENDPOINTS
+# ===================
+
+### Add todo item with Low priority
+POST {{ApiCore_HostAddress}}/api/todos/00000000-0000-0000-0000-000000000000/items
+Content-Type: application/json
+
+{
+  "title": "Review quarterly reports",
+  "description": "Go through Q3 performance reports and prepare summary",
+  "priority": 1,
+  "dueDate": "2024-12-31T23:59:59Z"
+}
+
+### Add todo item with Medium priority (default)
+POST {{ApiCore_HostAddress}}/api/todos/00000000-0000-0000-0000-000000000000/items
+Content-Type: application/json
+
+{
+  "title": "Update project documentation",
+  "description": "Update README and API documentation",
+  "priority": 2,
+  "dueDate": "2024-12-25T17:00:00Z"
+}
+
+### Add todo item with High priority
+POST {{ApiCore_HostAddress}}/api/todos/00000000-0000-0000-0000-000000000000/items
+Content-Type: application/json
+
+{
+  "title": "Fix critical bug in authentication",
+  "description": "Users are unable to login after recent deployment",
+  "priority": 3,
+  "dueDate": "2024-12-20T09:00:00Z"
+}
+
+### Add todo item with Urgent priority
+POST {{ApiCore_HostAddress}}/api/todos/00000000-0000-0000-0000-000000000000/items
+Content-Type: application/json
+
+{
+  "title": "Server maintenance emergency",
+  "description": "Critical server issue needs immediate attention",
+  "priority": 4,
+  "dueDate": "2024-12-18T12:00:00Z"
+}
+
+### Add todo item without optional fields
+POST {{ApiCore_HostAddress}}/api/todos/00000000-0000-0000-0000-000000000000/items
+Content-Type: application/json
+
+{
+  "title": "Simple task without description or due date",
+  "description": null,
+  "priority": 2,
+  "dueDate": null
+}
+
+### Complete a todo item (replace todoListId and itemId with actual GUIDs)
+PUT {{ApiCore_HostAddress}}/api/todos/00000000-0000-0000-0000-000000000000/items/00000000-0000-0000-0000-000000000000/complete
+
+###
+# ===================
+# ERROR TESTING
+# ===================
+
+### Test non-existent user
+GET {{ApiCore_HostAddress}}/api/users/99999999-9999-9999-9999-999999999999
+Accept: application/json
+
+### Test non-existent todo list  
+GET {{ApiCore_HostAddress}}/api/todos/99999999-9999-9999-9999-999999999999
+Accept: application/json
+
+### Test invalid user creation (missing required fields)
+POST {{ApiCore_HostAddress}}/api/users
+Content-Type: application/json
+
+{
+  "name": "",
+  "email": "invalid-email"
+}
+
+### Test invalid todo list creation (missing required fields)
+POST {{ApiCore_HostAddress}}/api/users/00000000-0000-0000-0000-000000000000/todos
+Content-Type: application/json
+
+{
+  "title": "",
+  "description": "Should fail due to empty title"
+}
+
+###
+# ===================
+# CORRELATION TESTING
+# ===================
+
+### Test with custom correlation ID
+GET {{ApiCore_HostAddress}}/api/users
+Accept: application/json
+X-Correlation-ID: test-correlation-12345
+
+### Test request logging with large payload
+POST {{ApiCore_HostAddress}}/api/users
+Content-Type: application/json
+X-Correlation-ID: large-payload-test
+
+{
+  "name": "User with a very long name that should test the logging middleware capabilities and ensure proper handling of larger request payloads in the structured logging system",
+  "email": "very.long.email.address.for.testing.purposes@example.com"
+}
+
+###
+# ===================
+# WORKFLOW EXAMPLE
+# ===================
+# Complete workflow: Create user -> Create todo list -> Add items -> Complete item
+
+### 1. Create user for workflow
+POST {{ApiCore_HostAddress}}/api/users
+Content-Type: application/json
+
+{
+  "name": "Workflow Test User",
+  "email": "workflow@example.com"
+}
+
+# Copy the userId from response and use in next requests
+
+### 2. Create todo list for workflow user
+POST {{ApiCore_HostAddress}}/api/users/REPLACE_WITH_USER_ID/todos
+Content-Type: application/json
+
+{
+  "title": "Project Setup",
+  "description": "Initial setup tasks for the new project"
+}
+
+# Copy the todoListId from response and use in next requests
+
+### 3. Add multiple items to the list
+POST {{ApiCore_HostAddress}}/api/todos/REPLACE_WITH_TODOLIST_ID/items
+Content-Type: application/json
+
+{
+  "title": "Initialize git repository",
+  "description": "Create git repo and initial commit",
+  "priority": 3,
+  "dueDate": "2024-12-19T10:00:00Z"
+}
+
+### 4. Add another item
+POST {{ApiCore_HostAddress}}/api/todos/REPLACE_WITH_TODOLIST_ID/items
+Content-Type: application/json
+
+{
+  "title": "Setup CI/CD pipeline",
+  "description": "Configure GitHub Actions for automated deployment", 
+  "priority": 2,
+  "dueDate": "2024-12-22T16:00:00Z"
+}
+
+### 5. View the complete todo list with all items
+GET {{ApiCore_HostAddress}}/api/todos/REPLACE_WITH_TODOLIST_ID
+Accept: application/json
+
+### 6. Complete the first task
+PUT {{ApiCore_HostAddress}}/api/todos/REPLACE_WITH_TODOLIST_ID/items/REPLACE_WITH_ITEM_ID/complete
+
+### 7. View updated todo list
+GET {{ApiCore_HostAddress}}/api/todos/REPLACE_WITH_TODOLIST_ID
+Accept: application/json
+
+###
+# ===================
+# REFERENCE INFORMATION
+# ===================
+
+# Priority Values:
+# 1 = Low
+# 2 = Medium (default)
+# 3 = High  
+# 4 = Urgent
+
+# Date Format: ISO 8601 (e.g., "2024-12-31T23:59:59Z")
+
+# All endpoints support:
+# - X-Correlation-ID header for request tracing
+# - Structured logging with performance monitoring
+# - OpenTelemetry integration for observability
+
+# Health Check Endpoints:
+# - GET /health (overall health)
+# - GET /alive (liveness check)
+
+# Note: Replace placeholder GUIDs (00000000-0000-0000-0000-000000000000) 
+# with actual GUIDs returned from API responses.
