@@ -25,11 +25,11 @@ public class RequestLoggingMiddleware
             string.Equals(path, healthPath, StringComparison.OrdinalIgnoreCase));
     }
 
-    private static Microsoft.Extensions.Logging.LogLevel GetLogLevel(int statusCode) => statusCode switch
+    private static LogLevel GetLogLevel(int statusCode) => statusCode switch
     {
-        >= 500 => Microsoft.Extensions.Logging.LogLevel.Error,
-        >= 400 => Microsoft.Extensions.Logging.LogLevel.Warning,
-        _ => Microsoft.Extensions.Logging.LogLevel.Information
+        >= 500 => LogLevel.Error,
+        >= 400 => LogLevel.Warning,
+        _ => LogLevel.Information
     };
 
     private static string GetOrCreateCorrelationId(HttpContext context)

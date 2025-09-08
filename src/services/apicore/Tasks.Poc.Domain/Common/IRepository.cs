@@ -1,8 +1,10 @@
 namespace Tasks.Poc.Domain.Common;
 
+using Tasks.Poc.SharedKernel.Base;
+
 public interface IRepository<TEntity, TId>
-    where TEntity : AggregateRoot<TId>
-    where TId : notnull
+    where TEntity : Entity<TId>, IAggregateRoot
+    where TId : notnull, IEquatable<TId>
 {
     Task<TEntity?> GetByIdAsync(TId id, CancellationToken cancellationToken = default);
     Task AddAsync(TEntity entity, CancellationToken cancellationToken = default);

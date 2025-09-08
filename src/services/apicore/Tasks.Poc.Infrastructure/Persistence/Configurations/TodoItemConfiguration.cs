@@ -1,10 +1,9 @@
+namespace Tasks.Poc.Infrastructure.Persistence.Configurations;
+
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Tasks.Poc.Domain.Entities;
-using Tasks.Poc.Domain.Enums;
 using Tasks.Poc.Domain.ValueObjects;
-
-namespace Tasks.Poc.Infrastructure.Persistence.Configurations;
 
 public class TodoItemConfiguration : IEntityTypeConfiguration<TodoItem>
 {
@@ -23,7 +22,7 @@ public class TodoItemConfiguration : IEntityTypeConfiguration<TodoItem>
         builder.Property(x => x.Title)
             .HasConversion(
                 x => x.Value,
-                x => new TodoItemTitle(x))
+                x => new Title(x))
             .HasMaxLength(300)
             .IsRequired();
 

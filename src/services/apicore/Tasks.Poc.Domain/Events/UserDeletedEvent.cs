@@ -4,11 +4,8 @@ using Tasks.Poc.Domain.ValueObjects;
 using Tasks.Poc.SharedKernel.Base;
 using Tasks.Poc.SharedKernel.Helpers;
 
-public sealed record TodoItemCompletedEvent(
-    EntityId TodoListId,
-    EntityId TodoItemId) : IDomainEvent
+public sealed record UserDeletedEvent(EntityId UserId) : IDomainEvent
 {
-    public EntityId TodoListId { get; } = TodoListId;
-    public EntityId TodoItemId { get; } = TodoItemId;
+    public EntityId UserId { get; } = UserId;
     public DateTime DateOccurred { get; } = DateTimeHelper.UtcNow();
 }

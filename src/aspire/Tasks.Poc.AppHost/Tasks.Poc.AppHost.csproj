@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <Sdk Name="Aspire.AppHost.Sdk" Version="9.4.2" />
+  <Sdk Name="Aspire.AppHost.Sdk" Version="$(AspireVersion)" />
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -8,6 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\fundations\Tasks.Poc.Contracts\Tasks.Poc.Contracts.csproj" />
     <ProjectReference Include="..\..\services\apicore\Tasks.Poc.ApiCore\Tasks.Poc.ApiCore.csproj" />
     <ProjectReference Include="..\..\clients\web\Tasks.Poc.Web.csproj" />
   </ItemGroup>

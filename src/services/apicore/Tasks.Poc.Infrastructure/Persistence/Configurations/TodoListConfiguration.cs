@@ -22,7 +22,7 @@ public class TodoListConfiguration : IEntityTypeConfiguration<TodoList>
         builder.Property(x => x.Title)
             .HasConversion(
                 x => x.Value,
-                x => new TodoTitle(x))
+                x => new Title(x))
             .HasMaxLength(200)
             .IsRequired();
 
@@ -41,7 +41,7 @@ public class TodoListConfiguration : IEntityTypeConfiguration<TodoList>
         builder.Property(x => x.CreatedAt)
             .IsRequired();
 
-        builder.Property(x => x.UpdatedAt);
+        builder.Property(x => x.LastModifiedAt);
 
         builder.HasMany(x => x.Items)
             .WithOne()

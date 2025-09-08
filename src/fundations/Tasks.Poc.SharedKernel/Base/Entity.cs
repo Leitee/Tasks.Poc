@@ -1,16 +1,14 @@
-namespace Tasks.Poc.Domain.Common;
-
-public abstract class Entity<TId> : IEquatable<Entity<TId>>
-    where TId : notnull
+namespace Tasks.Poc.SharedKernel.Base;
+public abstract class Entity : DomainEventsBase
 {
-    public TId Id { get; protected set; } = default!;
+    public Guid Id { get; set; } = Guid.CreateVersion7();
+}
 
-    protected Entity() { }
+public abstract class Entity<TId> : Entity
+    where TId : IEquatable<TId>
+{
+    public new TId Id { get; set; } = default!;
 
-    protected Entity(TId id)
-    {
-        Id = id;
-    }
 
     public bool Equals(Entity<TId>? other)
     {

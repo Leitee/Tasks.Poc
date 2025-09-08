@@ -3,10 +3,11 @@ namespace Tasks.Poc.Infrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Tasks.Poc.Domain.Common;
 using Tasks.Poc.Infrastructure.Persistence;
+using Tasks.Poc.SharedKernel.Base;
 
 public abstract class Repository<TEntity, TId> : IRepository<TEntity, TId>
-    where TEntity : AggregateRoot<TId>
-    where TId : notnull
+    where TEntity : Entity<TId>, IAggregateRoot
+    where TId : notnull, IEquatable<TId>
 {
     protected readonly TodoDbContext _context;
     protected readonly DbSet<TEntity> _dbSet;

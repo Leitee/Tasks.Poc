@@ -1,12 +1,12 @@
-using Tasks.Poc.Domain.Common;
+namespace Tasks.Poc.Domain.Entities;
+
 using Tasks.Poc.Domain.Enums;
 using Tasks.Poc.Domain.ValueObjects;
-
-namespace Tasks.Poc.Domain.Entities;
+using Tasks.Poc.SharedKernel.Base;
 
 public class TodoItem : Entity<EntityId>
 {
-    public TodoItemTitle Title { get; private set; }
+    public Title Title { get; private set; }
     public TodoDescription? Description { get; private set; }
     public bool IsCompleted { get; private set; }
     public Priority Priority { get; private set; }
@@ -18,7 +18,7 @@ public class TodoItem : Entity<EntityId>
 
     private TodoItem(
         EntityId id,
-        TodoItemTitle title,
+        Title title,
         TodoDescription? description,
         Priority priority,
         DateTime createdAt,
@@ -34,7 +34,7 @@ public class TodoItem : Entity<EntityId>
     }
 
     public static TodoItem Create(
-        TodoItemTitle title,
+        Title title,
         TodoDescription? description = null,
         Priority priority = Priority.Medium,
         DateTime? dueDate = null)
@@ -64,7 +64,7 @@ public class TodoItem : Entity<EntityId>
         CompletedAt = null;
     }
 
-    public void UpdateTitle(TodoItemTitle newTitle)
+    public void UpdateTitle(Title newTitle)
     {
         Title = newTitle;
     }

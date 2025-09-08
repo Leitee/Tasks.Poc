@@ -1,12 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\fundations\Tasks.Poc.Contracts\Tasks.Poc.Contracts.csproj" />
+    <ProjectReference Include="..\..\..\aspire\Tasks.Poc.ServiceDefaults\Tasks.Poc.ServiceDefaults.csproj" />
     <ProjectReference Include="..\Tasks.Poc.Domain\Tasks.Poc.Domain.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Include="MediatR" />
   </ItemGroup>
 
 </Project>

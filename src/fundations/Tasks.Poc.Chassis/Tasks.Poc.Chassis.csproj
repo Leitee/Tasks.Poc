@@ -1,0 +1,16 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  
+  <ItemGroup Label="Telemetry">
+    <PackageReference Include="Microsoft.AspNetCore.Diagnostics.Middleware" />
+    <PackageReference Include="Microsoft.Extensions.Compliance.Redaction" />
+    <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" />
+    <PackageReference Include="OpenTelemetry.Extensions.Hosting" />
+    <PackageReference Include="Scrutor" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <ProjectReference Include="..\Tasks.Poc.Contracts\Tasks.Poc.Contracts.csproj" />
+    <ProjectReference Include="..\Tasks.Poc.SharedKernel\Tasks.Poc.SharedKernel.csproj" />
+  </ItemGroup>
+  
+</Project>

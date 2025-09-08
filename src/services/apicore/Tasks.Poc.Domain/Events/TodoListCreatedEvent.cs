@@ -1,10 +1,16 @@
-using Tasks.Poc.Domain.Common;
-using Tasks.Poc.Domain.ValueObjects;
-
 namespace Tasks.Poc.Domain.Events;
 
-public record TodoListCreatedEvent(
+using Tasks.Poc.Domain.ValueObjects;
+using Tasks.Poc.SharedKernel.Base;
+using Tasks.Poc.SharedKernel.Helpers;
+
+public sealed record TodoListCreatedEvent(
     EntityId TodoListId,
     EntityId OwnerId,
-    TodoTitle Title,
-    DateTime OccurredOn) : IDomainEvent;
+    Title Title) : IDomainEvent
+{
+    public EntityId TodoListId { get; } = TodoListId;
+    public EntityId OwnerId { get; } = OwnerId;
+    public Title Title { get; } = Title;
+    public DateTime DateOccurred { get; } = DateTimeHelper.UtcNow();
+}

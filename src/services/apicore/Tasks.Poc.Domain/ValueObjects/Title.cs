@@ -1,10 +1,10 @@
 namespace Tasks.Poc.Domain.ValueObjects;
 
-public record TodoTitle
+public record Title
 {
     public string Value { get; }
 
-    public TodoTitle(string value)
+    public Title(string value)
     {
         Value = ValidateAndTrim(value);
     }
@@ -32,6 +32,6 @@ public record TodoTitle
 
     public override string ToString() => Value;
     
-    public static implicit operator TodoTitle(string value) => new(value);
-    public static implicit operator string(TodoTitle title) => title.Value;
+    public static implicit operator Title(string value) => new(value);
+    public static implicit operator string(Title title) => title.Value;
 }

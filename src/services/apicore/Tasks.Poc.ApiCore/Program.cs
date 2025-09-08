@@ -9,17 +9,17 @@ using Tasks.Poc.ApiCore.Logging;
 using Tasks.Poc.ApiCore.Behaviors;
 using Serilog;
 using System.Diagnostics;
+using Tasks.Poc.Application;
 
 var startupStopwatch = Stopwatch.StartNew();
 
 BootstrapLogger.Initialize();
+Log.Information("=== Starting Tasks.Poc.ApiCore application ===");
+Log.Information("Environment: {Environment}", Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT"));
+Log.Information("Process ID: {ProcessId}", Environment.ProcessId);
 
 try
 {
-    Log.Information("=== Starting Tasks.Poc.ApiCore application ===");
-    Log.Information("Environment: {Environment}", Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT"));
-    Log.Information("Process ID: {ProcessId}", Environment.ProcessId);
-
     var builder = WebApplication.CreateBuilder(args);
     
     BootstrapLogger.LogConfigurationLoaded(builder.Configuration);
@@ -29,6 +29,7 @@ try
 
     // Add service defaults & Aspire client integrations.
     builder.AddServiceDefaults();
+    builder.AddApplicationServices();
 
     // Add services to the container.
     builder.Services.AddProblemDetails();

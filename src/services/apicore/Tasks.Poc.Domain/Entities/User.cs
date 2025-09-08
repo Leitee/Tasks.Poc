@@ -1,14 +1,15 @@
-using Tasks.Poc.Domain.Common;
-using Tasks.Poc.Domain.ValueObjects;
-
 namespace Tasks.Poc.Domain.Entities;
 
-public class User : AggregateRoot<EntityId>
+using Tasks.Poc.Domain.Events;
+using Tasks.Poc.Domain.ValueObjects;
+using Tasks.Poc.SharedKernel.Base;
+
+public class User : AuditableEntity<EntityId>, IAggregateRoot, ISoftDelete
 {
     public UserName Name { get; private set; }
     public Email Email { get; private set; }
-    public DateTime CreatedAt { get; private set; }
     public DateTime? LastLoginAt { get; private set; }
+    public bool IsDeleted { get; private set; }
 
     private readonly List<TodoList> _todoLists = [];
     public IReadOnlyList<TodoList> TodoLists => _todoLists.AsReadOnly();
@@ -42,5 +43,11 @@ public class User : AggregateRoot<EntityId>
     public void UpdateEmail(Email newEmail)
     {
         Email = newEmail;
+    }
+
+    public void Delete()
+    {
+        IsDeleted = true;
+        RegisterDomainEvent(new UserDeletedEvent(Id));
     }
 }

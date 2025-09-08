@@ -1,5 +1,5 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
-    <ProjectReference Include="..\..\..\aspire\Tasks.Poc.ServiceDefaults\Tasks.Poc.ServiceDefaults.csproj" />
+    <ProjectReference Include="..\..\..\fundations\Tasks.Poc.SharedKernel\Tasks.Poc.SharedKernel.csproj" />
   </ItemGroup>
 </Project>
